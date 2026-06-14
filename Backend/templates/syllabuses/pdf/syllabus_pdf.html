@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <title>{{ syllabus.titleInfo.codeAndName|default:"Силлабус" }}</title>
+  <style>
+    @page {
+      size: A4 portrait;
+      margin: 14mm 12mm 16mm;
+      @bottom-center {
+        content: "Страница " counter(page) " из " counter(pages);
+        color: #64748b;
+        font-size: 8px;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: #111827;
+      font-family: "DejaVu Sans", Arial, sans-serif;
+      font-size: 9px;
+      line-height: 1.45;
+    }
+    header {
+      border-bottom: 2px solid #111827;
+      padding-bottom: 12px;
+      text-align: center;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+      text-align: left;
+    }
+    .brand-mark {
+      display: inline-block;
+      width: 32px;
+      height: 32px;
+      margin-right: 8px;
+      background: #064e3b;
+      color: #fff;
+      font-size: 17px;
+      font-weight: 700;
+      line-height: 32px;
+      text-align: center;
+      vertical-align: middle;
+    }
+    .brand-copy { display: inline-block; vertical-align: middle; }
+    .brand-copy strong { display: block; font-size: 12px; }
+    .brand-copy span { color: #64748b; font-size: 7px; text-transform: uppercase; }
+    .document-kind { color: #64748b; font-size: 8px; text-transform: uppercase; }
+    h1 { margin: 8px 0 4px; font-size: 17px; line-height: 1.25; text-transform: uppercase; }
+    .subtitle { margin: 0; color: #475569; font-size: 9px; font-weight: 600; }
+    section { margin-top: 18px; }
+    h2 {
+      margin: 0 0 8px;
+      border-bottom: 1px solid #1f2937;
+      padding-bottom: 4px;
+      font-size: 10px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    h3 { margin: 10px 0 3px; font-size: 9px; }
+    p { margin: 0; white-space: pre-wrap; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      font-size: 8px;
+      line-height: 1.35;
+    }
+    thead { display: table-header-group; }
+    tfoot { display: table-footer-group; }
+    tr { break-inside: avoid; page-break-inside: avoid; }
+    th, td {
+      border: .6px solid #64748b;
+      padding: 4px 5px;
+      overflow-wrap: anywhere;
+      text-align: left;
+      vertical-align: top;
+      white-space: pre-wrap;
+    }
+    th { background: #e2e8f0; color: #1e293b; font-weight: 700; }
+    .title-table th { width: 24%; }
+    .title-table td { width: 26%; }
+    .wide-table { font-size: 6.7px; }
+    .wide-table th, .wide-table td { padding: 3px; }
+    .number { width: 6%; text-align: center; }
+    .week { width: 7%; text-align: center; }
+    .empty { color: #94a3b8; }
+    ol { margin: 4px 0 10px; padding-left: 20px; }
+    li { margin-bottom: 3px; break-inside: avoid; }
+    .signature-images { margin-top: 14px; }
+    .signature-image {
+      display: inline-block;
+      width: 45%;
+      margin-right: 4%;
+      vertical-align: top;
+    }
+    .signature-image img {
+      display: block;
+      max-width: 100%;
+      max-height: 80px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div>
+        <span class="brand-mark">A</span>
+        <span class="brand-copy">
+          <strong>AlmaU</strong>
+          <span>Almaty Management University</span>
+        </span>
+      </div>
+      <div class="document-kind">Академический силлабус</div>
+    </div>
+    <div class="document-kind">Силлабус дисциплины</div>
+    <h1>{{ syllabus.titleInfo.codeAndName|default:"Без названия" }}</h1>
+    <p class="subtitle">
+      {{ syllabus.titleInfo.educationalProgram|default:"Программа не указана" }}
+      · {{ syllabus.titleInfo.semester|default:"Семестр не указан" }}
+      · {{ syllabus.titleInfo.languageOfEducation|default:"—" }}
+    </p>
+  </header>
+
+  <section>
+    <h2>1. Титульная информация</h2>
+    <table class="title-table">
+      <tbody>
+        <tr><th>Код и название дисциплины</th><td colspan="3">{{ syllabus.titleInfo.codeAndName|default:"—" }}</td></tr>
+        <tr><th>Кредиты</th><td>{{ syllabus.titleInfo.credits|default:"—" }}</td><th>Всего часов</th><td>{{ syllabus.titleInfo.totalHours|default:"—" }}</td></tr>
+        <tr><th>Аудиторные часы</th><td>{{ syllabus.titleInfo.classroomHours|default:"—" }}</td><th>Самостоятельная работа</th><td>{{ syllabus.titleInfo.independentWorkHours|default:"—" }}</td></tr>
+        <tr><th>Пререквизиты</th><td colspan="3">{{ syllabus.titleInfo.prerequisites|default:"—" }}</td></tr>
+        <tr><th>Уровень обучения</th><td>{{ syllabus.titleInfo.levelOfTraining|default:"—" }}</td><th>Семестр</th><td>{{ syllabus.titleInfo.semester|default:"—" }}</td></tr>
+        <tr><th>Образовательная программа</th><td colspan="3">{{ syllabus.titleInfo.educationalProgram|default:"—" }}</td></tr>
+        <tr><th>Язык обучения</th><td>{{ syllabus.titleInfo.languageOfEducation|default:"—" }}</td><th>Уровень владения языком</th><td>{{ syllabus.titleInfo.proficiencyLevel|default:"—" }}</td></tr>
+        <tr><th>Формат обучения</th><td>{{ syllabus.titleInfo.formatOfTraining|default:"—" }}</td><th>Время и место</th><td>{{ syllabus.titleInfo.timeAndPlace|default:"—" }}</td></tr>
+        <tr><th>Преподаватель</th><td>{{ syllabus.titleInfo.instructorName|default:"—" }}</td><th>Ученая степень / должность</th><td>{{ syllabus.titleInfo.instructorDegree|default:"—" }}</td></tr>
+        <tr><th>Email</th><td>{{ syllabus.titleInfo.instructorEmail|default:"—" }}</td><th>Контакты</th><td>{{ syllabus.titleInfo.instructorContacts|default:"—" }}</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>2. График занятий и задания</h2>
+    <table>
+      <thead><tr><th class="number">№</th><th class="week">Неделя</th><th>Тема / модуль</th><th>Формат проведения</th><th>Задание</th></tr></thead>
+      <tbody>
+        {% for row in syllabus.classSchedule.all %}
+          <tr><td class="number">{{ forloop.counter }}</td><td class="week">{{ row.week }}</td><td>{{ row.topic|default:"—" }}</td><td>{{ row.format|default:"—" }}</td><td>{{ row.task|default:"—" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="5" class="empty">Данные не указаны.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>3. Описание курса</h2>
+    <h3>3.1. Описание курса</h3>
+    <p>{{ syllabus.courseDescription|default:"—" }}</p>
+    <h3>3.2. Цель обучения</h3>
+    <p>{{ syllabus.courseGoal|default:"—" }}</p>
+  </section>
+
+  <section>
+    <h2>4. Результаты обучения</h2>
+    <table>
+      <thead><tr><th class="number">№</th><th style="width: 9%">Код</th><th>Результаты обучения курса</th><th>Результаты обучения ОП</th><th>Описание</th></tr></thead>
+      <tbody>
+        {% for row in syllabus.learningOutcomes.all %}
+          <tr><td class="number">{{ forloop.counter }}</td><td>{{ row.code|default:"—" }}</td><td>{{ row.courseLearningOutcome|default:"—" }}</td><td>{{ row.programLearningOutcome|default:"—" }}</td><td>{{ row.description|default:"—" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="5" class="empty">Данные не указаны.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>5. Тематический план</h2>
+    <table class="wide-table">
+      <thead><tr><th class="week">Неделя</th><th>Тема / модуль</th><th>PO курса / PO ОП</th><th>Вопросы</th><th>Задания</th><th>Литература</th><th>Структура оценок</th></tr></thead>
+      <tbody>
+        {% for row in syllabus.thematicPlan.all %}
+          <tr><td class="week">{{ row.week }}</td><td>{{ row.topicModule|default:"—" }}</td><td>{{ row.courseOutcome|default:"—" }}</td><td>{{ row.questions|default:"—" }}</td><td>{{ row.tasks|default:"—" }}</td><td>{{ row.literature|default:"—" }}</td><td>{{ row.gradeStructure|default:"—" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="7" class="empty">Данные не указаны.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>6. Система оценивания курса</h2>
+    <table>
+      <thead><tr><th class="number">№</th><th>Тема / модуль</th><th style="width: 18%">Максимальный процент (%)</th><th style="width: 18%">Максимальный вес (%)</th><th style="width: 16%">Итоговые баллы</th></tr></thead>
+      <tbody>
+        {% for row in syllabus.assessmentSystem.all %}
+          <tr><td class="number">{{ forloop.counter }}</td><td>{{ row.topicModule|default:"—" }}</td><td>{{ row.maxPercent|default:"—" }}</td><td>{{ row.maxWeight|default:"—" }}</td><td>{{ row.finalPoints|default:"—" }}</td></tr>
+        {% empty %}
+          <tr><td colspan="5" class="empty">Данные не указаны.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>7. Список литературы</h2>
+    <h3>A. Обязательная литература</h3>
+    <ol>
+      {% for item in required_literature %}<li>{{ item.text }}</li>{% empty %}<li class="empty">Не указана.</li>{% endfor %}
+    </ol>
+    <h3>B. Дополнительная литература</h3>
+    <ol>
+      {% for item in additional_literature %}<li>{{ item.text }}</li>{% empty %}<li class="empty">Не указана.</li>{% endfor %}
+    </ol>
+    <h3>C. Интернет-ресурсы</h3>
+    <ol>
+      {% for item in internet_resources %}<li>{{ item.text }}</li>{% empty %}<li class="empty">Не указаны.</li>{% endfor %}
+    </ol>
+  </section>
+
+  <section>
+    <h2>8. Философия преподавания и обучения</h2>
+    <p>{{ syllabus.teachingPhilosophy|default:"—" }}</p>
+  </section>
+
+  <section>
+    <h2>9. Политика курса</h2>
+    <h3>9.1. Освоение дисциплины предусматривает</h3><p>{{ syllabus.coursePolicy.masteringDiscipline|default:"—" }}</p>
+    <h3>9.2. Допустимо</h3><p>{{ syllabus.coursePolicy.allowed|default:"—" }}</p>
+    <h3>9.3. Недопустимо</h3><p>{{ syllabus.coursePolicy.notAllowed|default:"—" }}</p>
+    <h3>9.4. Этика экзамена</h3><p>{{ syllabus.coursePolicy.examEthics|default:"—" }}</p>
+    <h3>9.5. Информация и связь</h3><p>{{ syllabus.coursePolicy.informationCommunication|default:"—" }}</p>
+  </section>
+
+  <section>
+    <h2>10. Подпись</h2>
+    <table class="title-table">
+      <tbody>
+        <tr><th>Подготовил(а)</th><td>{{ syllabus.signatures.preparedByName|default:"—" }}</td><th>Должность</th><td>{{ syllabus.signatures.preparedByPosition|default:"—" }}</td></tr>
+        <tr><th>Дата</th><td>{{ syllabus.signatures.preparedByDate|default:"—" }}</td><th>Подпись</th><td>____________________</td></tr>
+      </tbody>
+    </table>
+    <div class="signature-images">
+      {% if syllabus.signatures.signatureImage %}
+        <div class="signature-image"><strong>Подпись</strong><img src="{{ syllabus.signatures.signatureImage }}" alt="Подпись"></div>
+      {% endif %}
+      {% if syllabus.signatures.stampImage %}
+        <div class="signature-image"><strong>Печать</strong><img src="{{ syllabus.signatures.stampImage }}" alt="Печать"></div>
+      {% endif %}
+    </div>
+  </section>
+</body>
+</html>
