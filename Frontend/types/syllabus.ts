@@ -1,6 +1,10 @@
 export type SyllabusStatus = 'draft' | 'ready'
-export type SyllabusLanguage = 'KZ' | 'RU' | 'EN'
+export type SyllabusLanguage = 'KZ' | 'RU' | 'EN' | 'MULTI'
 export type SyllabusPdfStatus = 'not_generated' | 'processing' | 'generated' | 'failed'
+export type SyllabusRenderTranslationStatus = 'not_translated' | 'translating' | 'completed' | 'failed'
+export type SyllabusAiFillStatus = 'not_started' | 'processing' | 'completed' | 'failed'
+export type DocumentLanguage = 'ru' | 'kz' | 'en'
+export type DocumentFormat = 'pdf' | 'docx'
 
 export interface PdfGenerationResponse {
   taskId: string
@@ -13,6 +17,38 @@ export interface PdfStatusResponse {
   pdfGeneratedAt: string | null
   pdfError: string
   pdfFile: string | null
+  documents?: Record<DocumentLanguage, Record<DocumentFormat, boolean>>
+}
+
+export type DocumentAvailability = Record<DocumentLanguage, Record<DocumentFormat, boolean>>
+
+export interface RenderTranslationResponse {
+  taskId: string
+  status: SyllabusRenderTranslationStatus
+}
+
+export interface RenderTranslationStatusResponse {
+  taskId: string
+  status: SyllabusRenderTranslationStatus
+  error: string
+  translatedAt: string | null
+  renderedContent: string
+  renderedContentKz: string
+  renderedContentRu: string
+  renderedContentEn: string
+}
+
+export interface AiFillResponse {
+  taskId: string
+  status: SyllabusAiFillStatus
+}
+
+export interface AiFillStatusResponse {
+  taskId: string
+  status: SyllabusAiFillStatus
+  error: string
+  filledAt: string | null
+  syllabus: Syllabus
 }
 
 export interface SyllabusTitleInfo {
@@ -25,6 +61,10 @@ export interface SyllabusTitleInfo {
   levelOfTraining: string
   semester: string
   educationalProgram: string
+  schoolId: string
+  schoolName: string
+  courseType: string
+  templateId: string
   languageOfEducation: string
   proficiencyLevel: string
   formatOfTraining: string
@@ -33,6 +73,7 @@ export interface SyllabusTitleInfo {
   instructorEmail: string
   instructorContacts: string
   timeAndPlace: string
+  qrUrl: string
 }
 
 export interface ClassScheduleRow {
@@ -108,15 +149,41 @@ export interface Syllabus {
   coursePolicy: CoursePolicy
   signatures: SignatureBlock
   pdfFile?: string | null
+  pdfFileRu?: string | null
+  pdfFileKz?: string | null
+  pdfFileEn?: string | null
+  docxFileRu?: string | null
+  docxFileKz?: string | null
+  docxFileEn?: string | null
+  documents?: DocumentAvailability
   pdfStatus?: SyllabusPdfStatus
   pdfGeneratedAt?: string | null
   pdfError?: string
   pdfTaskId?: string
+  constructorSavedAt?: string | null
+  renderedContent?: string
+  renderedContentKz?: string
+  renderedContentRu?: string
+  renderedContentEn?: string
+  renderTranslationStatus?: SyllabusRenderTranslationStatus
+  renderTranslationError?: string
+  renderTranslatedAt?: string | null
+  renderTranslationTaskId?: string
+  aiFillStatus?: SyllabusAiFillStatus
+  aiFillError?: string
+  aiFillTaskId?: string
+  aiFilledAt?: string | null
   createdAt: string
   updatedAt: string
 }
 
 export type SyllabusInput = Omit<
   Syllabus,
-  'id' | 'pdfFile' | 'pdfStatus' | 'pdfGeneratedAt' | 'pdfError' | 'pdfTaskId' | 'createdAt' | 'updatedAt'
+  'id' | 'pdfFile' | 'pdfFileRu' | 'pdfFileKz' | 'pdfFileEn'
+  | 'docxFileRu' | 'docxFileKz' | 'docxFileEn'
+  | 'pdfStatus' | 'pdfGeneratedAt' | 'pdfError' | 'pdfTaskId'
+  | 'constructorSavedAt' | 'renderedContent' | 'renderedContentKz' | 'renderedContentRu'
+  | 'renderedContentEn' | 'renderTranslationStatus' | 'renderTranslationError'
+  | 'renderTranslatedAt' | 'renderTranslationTaskId' | 'aiFillStatus' | 'aiFillError'
+  | 'aiFillTaskId' | 'aiFilledAt' | 'createdAt' | 'updatedAt'
 >

@@ -17,7 +17,7 @@ const model = defineModel<string>()
 <template>
   <label class="block">
     <span v-if="label" class="form-label">{{ label }}</span>
-    <textarea v-model="model" v-bind="$attrs" :rows="rows" class="form-textarea" />
+    <textarea v-model="model" v-bind="$attrs" :rows="rows" class="form-input form-textarea" />
     <span v-if="hint" class="mt-1.5 block text-xs text-slate-400">{{ hint }}</span>
   </label>
 </template>

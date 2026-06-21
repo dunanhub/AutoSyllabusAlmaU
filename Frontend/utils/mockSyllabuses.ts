@@ -7,7 +7,7 @@ import type {
   ThematicPlanRow
 } from '~/types/syllabus'
 
-export const STORAGE_SCHEMA_VERSION = 3
+export const STORAGE_SCHEMA_VERSION = 4
 
 export function createId(prefix = 'item'): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 10)}`
@@ -75,6 +75,10 @@ export function createEmptySyllabus(): Syllabus {
       levelOfTraining: 'Бакалавриат',
       semester: 'Осенний',
       educationalProgram: '',
+      schoolId: '',
+      schoolName: '',
+      courseType: 'default',
+      templateId: 'default-almau-syllabus',
       languageOfEducation: 'RU',
       proficiencyLevel: '',
       formatOfTraining: 'Очная',
@@ -82,7 +86,8 @@ export function createEmptySyllabus(): Syllabus {
       instructorDegree: '',
       instructorEmail: '',
       instructorContacts: '',
-      timeAndPlace: ''
+      timeAndPlace: '',
+      qrUrl: ''
     },
     classSchedule: createClassSchedule(),
     courseDescription: '',
@@ -122,6 +127,19 @@ export function createEmptySyllabus(): Syllabus {
       signatureImage: '',
       stampImage: ''
     },
+    constructorSavedAt: null,
+    renderedContent: '',
+    renderedContentKz: '',
+    renderedContentRu: '',
+    renderedContentEn: '',
+    renderTranslationStatus: 'not_translated',
+    renderTranslationError: '',
+    renderTranslatedAt: null,
+    renderTranslationTaskId: '',
+    aiFillStatus: 'not_started',
+    aiFillError: '',
+    aiFillTaskId: '',
+    aiFilledAt: null,
     createdAt: '',
     updatedAt: ''
   }
@@ -210,6 +228,10 @@ export const mockSyllabuses: Syllabus[] = [{
     levelOfTraining: 'Бакалавриат',
     semester: '1 семестр',
     educationalProgram: 'Все образовательные программы бакалавриата AlmaU',
+    schoolId: 'social-transformative-humanities',
+    schoolName: 'School of Social Sciences and Transformative Humanities',
+    courseType: 'history',
+    templateId: 'default-almau-syllabus',
     languageOfEducation: 'RU',
     proficiencyLevel: 'Академический русский / базовое понимание исторической терминологии',
     formatOfTraining: 'Очная / blended learning',
@@ -217,7 +239,8 @@ export const mockSyllabuses: Syllabus[] = [{
     instructorDegree: 'к.и.н., ассоциированный профессор',
     instructorEmail: 'a.smagulova@almau.edu.kz',
     instructorContacts: 'Консультации: среда 15:00-17:00, LMS Moodle, корпоративная почта',
-    timeAndPlace: 'Понедельник 09:00-11:50, аудитория 302'
+    timeAndPlace: 'Понедельник 09:00-11:50, аудитория 302',
+    qrUrl: 'https://almau.edu.kz/syllabuses/syl-history-kazakhstan'
   },
   classSchedule: historyClassSchedule,
   courseDescription: 'Курс “История Казахстана” направлен на формирование целостного понимания исторического развития Казахстана с древнейших времен до современности. Особое внимание уделяется анализу государственности, социально-экономических трансформаций, культурного наследия, национальной идентичности и места Казахстана в мировом историческом процессе.',
@@ -272,6 +295,24 @@ export function normalizeSyllabus(source: LegacyRecord): Syllabus {
   if (source.titleInfo && source.classSchedule && source.thematicPlan && source.assessmentSystem) {
     const normalized = source as Syllabus
     normalized.status = normalized.status === 'ready' ? 'ready' : 'draft'
+    normalized.titleInfo.qrUrl ||= ''
+    normalized.titleInfo.schoolId ||= ''
+    normalized.titleInfo.schoolName ||= ''
+    normalized.titleInfo.courseType ||= 'default'
+    normalized.titleInfo.templateId ||= 'default-almau-syllabus'
+    normalized.constructorSavedAt ||= null
+    normalized.renderedContent ||= ''
+    normalized.renderedContentKz ||= ''
+    normalized.renderedContentRu ||= ''
+    normalized.renderedContentEn ||= ''
+    normalized.renderTranslationStatus ||= 'not_translated'
+    normalized.renderTranslationError ||= ''
+    normalized.renderTranslatedAt ||= null
+    normalized.renderTranslationTaskId ||= ''
+    normalized.aiFillStatus ||= 'not_started'
+    normalized.aiFillError ||= ''
+    normalized.aiFillTaskId ||= ''
+    normalized.aiFilledAt ||= null
     normalized.completion = calculateCompletion(normalized)
     normalized.assessmentSystem = normalized.assessmentSystem.map(row => ({
       ...row,
@@ -301,6 +342,10 @@ export function normalizeSyllabus(source: LegacyRecord): Syllabus {
       levelOfTraining: source.levelOfTraining || empty.titleInfo.levelOfTraining,
       semester: source.semester || empty.titleInfo.semester,
       educationalProgram: source.educationalProgram || '',
+      schoolId: source.schoolId || '',
+      schoolName: source.schoolName || '',
+      courseType: source.courseType || 'default',
+      templateId: source.templateId || 'default-almau-syllabus',
       languageOfEducation: language,
       proficiencyLevel: source.levelOfProficiency || '',
       formatOfTraining: source.formatOfTraining || empty.titleInfo.formatOfTraining,
@@ -308,7 +353,8 @@ export function normalizeSyllabus(source: LegacyRecord): Syllabus {
       instructorDegree: instructor.position || source.instructorDegree || '',
       instructorEmail: instructor.email || source.instructorEmail || '',
       instructorContacts: instructor.contacts || source.instructorContacts || '',
-      timeAndPlace: source.timeAndPlace || ''
+      timeAndPlace: source.timeAndPlace || '',
+      qrUrl: source.qrUrl || ''
     },
     courseDescription: source.courseDescription || '',
     courseGoal: source.courseObjective || '',

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Syllabus, SyllabusInput, SyllabusStatus } from '~/types/syllabus'
+import type { DocumentFormat, DocumentLanguage, Syllabus, SyllabusInput, SyllabusStatus } from '~/types/syllabus'
 import { calculateCompletion, normalizeSyllabus } from '~/utils/mockSyllabuses'
 
 export const useSyllabusStore = defineStore('syllabus', () => {
@@ -46,9 +46,9 @@ export const useSyllabusStore = defineStore('syllabus', () => {
     return syllabuses.value
   }
 
-  async function getSyllabusById(id: string) {
+  async function getSyllabusById(id: string, force = false) {
     const cached = syllabuses.value.find(item => item.id === id)
-    if (cached) return cached
+    if (cached && !force) return cached
     const fetched = normalizeRecord(await api().get(id))
     upsertRecord(fetched)
     return fetched
@@ -62,6 +62,12 @@ export const useSyllabusStore = defineStore('syllabus', () => {
 
   async function updateSyllabus(id: string, payload: Partial<Syllabus>) {
     const updated = normalizeRecord(await api().update(id, payload as Partial<SyllabusInput>))
+    upsertRecord(updated)
+    return updated
+  }
+
+  async function patchSyllabus(id: string, payload: Partial<Syllabus>) {
+    const updated = normalizeRecord(await api().patch(id, payload as Partial<SyllabusInput>))
     upsertRecord(updated)
     return updated
   }
@@ -91,6 +97,7 @@ export const useSyllabusStore = defineStore('syllabus', () => {
       record.pdfTaskId = response.taskId
       record.pdfError = ''
       record.pdfGeneratedAt = null
+      record.documents = undefined
     }
     return record
   }
@@ -104,12 +111,17 @@ export const useSyllabusStore = defineStore('syllabus', () => {
       record.pdfGeneratedAt = response.pdfGeneratedAt
       record.pdfError = response.pdfError
       record.pdfFile = response.pdfFile
+      record.documents = response.documents
     }
     return record
   }
 
   async function downloadPdf(id: string) {
-    const blob = await api().downloadPdf(id)
+    await downloadDocument(id, { language: 'ru', format: 'pdf' })
+  }
+
+  async function downloadDocument(id: string, options: { language: DocumentLanguage, format: DocumentFormat }) {
+    const blob = await api().downloadDocument(id, options.language, options.format)
     if (!import.meta.client) return
 
     const syllabus = syllabuses.value.find(item => item.id === id)
@@ -118,11 +130,67 @@ export const useSyllabusStore = defineStore('syllabus', () => {
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `syllabus_${safeCode || id}.pdf`
+    anchor.download = `syllabus_${safeCode || id}_${options.language}.${options.format}`
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
     URL.revokeObjectURL(url)
+  }
+
+  async function translateRendered(id: string) {
+    const response = await api().translateRendered(id)
+    const record = syllabuses.value.find(item => item.id === id)
+    if (record) {
+      record.renderTranslationStatus = response.status
+      record.renderTranslationTaskId = response.taskId
+      record.renderTranslationError = ''
+    }
+    return record
+  }
+
+  async function getRenderTranslationStatus(id: string) {
+    const response = await api().getRenderTranslationStatus(id)
+    const record = syllabuses.value.find(item => item.id === id)
+    if (record) {
+      record.renderTranslationStatus = response.status
+      record.renderTranslationTaskId = response.taskId
+      record.renderTranslationError = response.error
+      record.renderTranslatedAt = response.translatedAt
+      record.renderedContent = response.renderedContent
+      record.renderedContentKz = response.renderedContentKz
+      record.renderedContentRu = response.renderedContentRu
+      record.renderedContentEn = response.renderedContentEn
+    }
+    return record
+  }
+
+  async function aiFill(id: string) {
+    const response = await api().aiFill(id)
+    const record = syllabuses.value.find(item => item.id === id)
+    if (record) {
+      record.aiFillStatus = response.status
+      record.aiFillTaskId = response.taskId
+      record.aiFillError = ''
+      record.aiFilledAt = null
+    }
+    return record
+  }
+
+  async function getAiFillStatus(id: string) {
+    const response = await api().getAiFillStatus(id)
+    if (response.syllabus) {
+      const updated = normalizeRecord(response.syllabus)
+      upsertRecord(updated)
+      return updated
+    }
+    const record = syllabuses.value.find(item => item.id === id)
+    if (record) {
+      record.aiFillStatus = response.status
+      record.aiFillTaskId = response.taskId
+      record.aiFillError = response.error
+      record.aiFilledAt = response.filledAt
+    }
+    return record
   }
 
   async function reset() {
@@ -141,12 +209,18 @@ export const useSyllabusStore = defineStore('syllabus', () => {
     getSyllabusById,
     createSyllabus,
     updateSyllabus,
+    patchSyllabus,
     deleteSyllabus,
     duplicateSyllabus,
     updateStatus,
     generatePdf,
     getPdfStatus,
     downloadPdf,
+    downloadDocument,
+    translateRendered,
+    getRenderTranslationStatus,
+    aiFill,
+    getAiFillStatus,
     reset
   }
 })

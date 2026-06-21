@@ -51,6 +51,20 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value
   }
 
+  async function register(payload: {
+    firstName: string
+    lastName: string
+    email: string
+    password: string
+    passwordConfirm: string
+  }) {
+    const authApi = useAuthApi()
+    const response = await authApi.register(payload)
+    setTokens(response.access, response.refresh)
+    await fetchCurrentUser()
+    return user.value
+  }
+
   async function fetchCurrentUser() {
     if (!accessToken.value) return null
     const authApi = useAuthApi()
@@ -90,5 +104,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, accessToken, refreshToken, initialized, isAuthenticated, initialize, login, logout, fetchCurrentUser, refreshAccessToken }
+  return { user, accessToken, refreshToken, initialized, isAuthenticated, initialize, login, register, logout, fetchCurrentUser, refreshAccessToken }
 })

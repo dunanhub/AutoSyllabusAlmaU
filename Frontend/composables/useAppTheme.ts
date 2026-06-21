@@ -5,7 +5,7 @@ export function useAppTheme() {
   const isDark = computed(() => theme.global.name.value === 'almauDark')
 
   function setTheme(value: 'almauDark' | 'almauLight') {
-    theme.global.name.value = value
+    theme.change(value)
     if (import.meta.client) localStorage.setItem('sgs-theme', value)
   }
 

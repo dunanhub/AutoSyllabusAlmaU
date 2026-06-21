@@ -1,5 +1,11 @@
 import type {
+  AiFillResponse,
+  AiFillStatusResponse,
+  DocumentFormat,
+  DocumentLanguage,
   PdfGenerationResponse,
+  RenderTranslationResponse,
+  RenderTranslationStatusResponse,
   PdfStatusResponse,
   Syllabus,
   SyllabusInput,
@@ -52,6 +58,34 @@ export function useSyllabusApi() {
     downloadPdf(id: string) {
       return request<Blob>(`/syllabuses/${id}/download-pdf/`, {
         responseType: 'blob',
+        showErrorToast: false
+      })
+    },
+    downloadDocument(id: string, language: DocumentLanguage, format: DocumentFormat) {
+      return request<Blob>(`/syllabuses/${id}/download-document/?language=${language}&format=${format}`, {
+        responseType: 'blob',
+        showErrorToast: false
+      })
+    },
+    translateRendered(id: string) {
+      return request<RenderTranslationResponse>(`/syllabuses/${id}/translate-rendered/`, {
+        method: 'POST',
+        showErrorToast: false
+      })
+    },
+    getRenderTranslationStatus(id: string) {
+      return request<RenderTranslationStatusResponse>(`/syllabuses/${id}/render-translation-status/`, {
+        showErrorToast: false
+      })
+    },
+    aiFill(id: string) {
+      return request<AiFillResponse>(`/syllabuses/${id}/ai-fill/`, {
+        method: 'POST',
+        showErrorToast: false
+      })
+    },
+    getAiFillStatus(id: string) {
+      return request<AiFillStatusResponse>(`/syllabuses/${id}/ai-fill-status/`, {
         showErrorToast: false
       })
     }

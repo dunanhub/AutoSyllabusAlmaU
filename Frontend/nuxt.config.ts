@@ -3,6 +3,9 @@ import vuetify, { transformAssetUrls } from 'vite-plugin-vuetify'
 export default defineNuxtConfig({
   compatibilityDate: '2025-05-15',
   devtools: { enabled: true },
+  experimental: {
+    appManifest: false
+  },
   modules: ['@pinia/nuxt', '@nuxtjs/tailwindcss', '@nuxt/eslint'],
   runtimeConfig: {
     public: {
@@ -14,6 +17,12 @@ export default defineNuxtConfig({
     transpile: ['vuetify']
   },
   vite: {
+    server: {
+      watch: {
+        usePolling: true,
+        interval: 1000
+      }
+    },
     vue: {
       template: { transformAssetUrls }
     }
@@ -26,7 +35,8 @@ export default defineNuxtConfig({
   components: [
     { path: '~/components/ui', pathPrefix: false },
     { path: '~/components/layout', pathPrefix: false },
-    { path: '~/components/syllabus', pathPrefix: false }
+    { path: '~/components/syllabus', pathPrefix: false },
+    { path: '~/components/templates', pathPrefix: false }
   ],
   app: {
     head: {

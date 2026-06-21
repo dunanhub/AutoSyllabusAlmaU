@@ -67,7 +67,8 @@ export default defineNuxtPlugin((nuxtApp) => {
       VCard: { rounded: 'xl', elevation: 0 },
       VTextField: { variant: 'outlined', density: 'comfortable', color: 'primary', hideDetails: 'auto' },
       VSelect: { variant: 'outlined', density: 'comfortable', color: 'primary', hideDetails: 'auto' },
-      VTextarea: { variant: 'outlined', density: 'comfortable', color: 'primary', hideDetails: 'auto' }
+      VTextarea: { variant: 'outlined', density: 'comfortable', color: 'primary', hideDetails: 'auto' },
+      VTooltip: { contentClass: 'app-tooltip' }
     }
   })
 

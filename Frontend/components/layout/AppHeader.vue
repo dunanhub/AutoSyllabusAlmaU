@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { mdiBellOutline, mdiChevronDown, mdiMagnify, mdiMenu, mdiMoonWaningCrescent, mdiWhiteBalanceSunny } from '@mdi/js'
+import { mdiChevronDown, mdiMagnify, mdiMenu, mdiMoonWaningCrescent, mdiWhiteBalanceSunny } from '@mdi/js'
 
 const emit = defineEmits<{ toggleDrawer: [] }>()
 const route = useRoute()
 const auth = useAuthStore()
 const { isDark, toggleTheme } = useAppTheme()
 const search = ref('')
+const isMounted = ref(false)
 
 const sectionName = computed(() => {
   if (route.path === '/dashboard') return 'Обзор'
@@ -16,6 +17,13 @@ const sectionName = computed(() => {
   if (route.path.includes('/edit')) return 'Редактирование'
   if (/\/syllabuses\/[^/]+$/.test(route.path)) return 'Предпросмотр'
   return 'Силлабусы'
+})
+
+const profileEmail = computed(() => (isMounted.value ? auth.user?.email || '' : ''))
+const profileInitials = computed(() => profileEmail.value.slice(0, 2).toUpperCase() || 'SG')
+
+onMounted(() => {
+  isMounted.value = true
 })
 </script>
 
@@ -38,23 +46,23 @@ const sectionName = computed(() => {
       hide-details
       class="mr-3 hidden max-w-[300px] lg:block"
     />
-    <v-chip size="small" variant="tonal" color="primary" class="mr-2 hidden md:inline-flex">Demo workspace</v-chip>
+    <!-- <v-chip size="small" variant="tonal" color="primary" class="mr-2 hidden md:inline-flex">Demo workspace</v-chip> -->
     <v-btn
       :icon="isDark ? mdiWhiteBalanceSunny : mdiMoonWaningCrescent"
       variant="text"
       :aria-label="isDark ? 'Включить светлую тему' : 'Включить темную тему'"
       @click="toggleTheme"
     />
-    <v-btn :icon="mdiBellOutline" variant="text" aria-label="Уведомления">
+    <!-- <v-btn :icon="mdiBellOutline" variant="text" aria-label="Уведомления">
       <v-badge color="primary" dot />
-    </v-btn>
+    </v-btn> -->
     <v-menu>
       <template #activator="{ props }">
         <v-btn v-bind="props" variant="text" class="ml-1 px-2">
           <v-avatar color="primary" size="34" class="mr-2 font-weight-bold">
-            {{ auth.user?.email.slice(0, 2).toUpperCase() || 'SG' }}
+            {{ profileInitials }}
           </v-avatar>
-          <span class="hidden max-w-40 truncate text-xs font-bold xl:inline">{{ auth.user?.email }}</span>
+          <span class="hidden max-w-40 truncate text-xs font-bold xl:inline">{{ profileEmail }}</span>
           <v-icon :icon="mdiChevronDown" size="16" class="ml-1" />
         </v-btn>
       </template>

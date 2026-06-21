@@ -8,6 +8,14 @@ export interface TokenPair {
   refresh: string
 }
 
+export interface RegisterPayload {
+  firstName: string
+  lastName: string
+  email: string
+  password: string
+  passwordConfirm: string
+}
+
 export interface CurrentUserResponse {
   id: number | string
   email: string
@@ -16,10 +24,23 @@ export interface CurrentUserResponse {
   is_staff?: boolean
 }
 
+export interface RegisterResponse extends TokenPair {
+  user: CurrentUserResponse
+}
+
 export function useAuthApi() {
   const { request } = useApi()
 
   return {
+    register(payload: RegisterPayload) {
+      return request<RegisterResponse, RegisterPayload>('/auth/register/', {
+        method: 'POST',
+        body: payload,
+        requiresAuth: false,
+        retryOnUnauthorized: false,
+        showErrorToast: false
+      })
+    },
     login(payload: LoginPayload) {
       return request<TokenPair, LoginPayload>('/auth/login/', { method: 'POST', body: payload, requiresAuth: false, retryOnUnauthorized: false })
     },

@@ -78,21 +78,48 @@ class SyllabusSerializer(serializers.ModelSerializer):
     coursePolicy = CoursePolicySerializer(required=False)
     signatures = SignatureBlockSerializer(required=False)
     pdfFile = serializers.FileField(source='pdf_file', read_only=True, allow_null=True)
+    pdfFileRu = serializers.FileField(source='pdf_file_ru', read_only=True, allow_null=True)
+    pdfFileKz = serializers.FileField(source='pdf_file_kz', read_only=True, allow_null=True)
+    pdfFileEn = serializers.FileField(source='pdf_file_en', read_only=True, allow_null=True)
+    docxFileRu = serializers.FileField(source='docx_file_ru', read_only=True, allow_null=True)
+    docxFileKz = serializers.FileField(source='docx_file_kz', read_only=True, allow_null=True)
+    docxFileEn = serializers.FileField(source='docx_file_en', read_only=True, allow_null=True)
     pdfStatus = serializers.CharField(source='pdf_status', read_only=True)
     pdfGeneratedAt = serializers.DateTimeField(source='pdf_generated_at', read_only=True, allow_null=True)
     pdfError = serializers.CharField(source='pdf_error', read_only=True)
     pdfTaskId = serializers.CharField(source='pdf_task_id', read_only=True)
+    constructorSavedAt = serializers.DateTimeField(source='constructor_saved_at', required=False, allow_null=True)
+    renderedContent = serializers.CharField(source='rendered_content', read_only=True)
+    renderedContentKz = serializers.CharField(source='rendered_content_kz', read_only=True)
+    renderedContentRu = serializers.CharField(source='rendered_content_ru', read_only=True)
+    renderedContentEn = serializers.CharField(source='rendered_content_en', read_only=True)
+    renderTranslationStatus = serializers.CharField(source='render_translation_status', read_only=True)
+    renderTranslationError = serializers.CharField(source='render_translation_error', read_only=True)
+    renderTranslatedAt = serializers.DateTimeField(source='render_translated_at', read_only=True, allow_null=True)
+    renderTranslationTaskId = serializers.CharField(source='render_translation_task_id', read_only=True)
+    aiFillStatus = serializers.CharField(source='ai_fill_status', read_only=True)
+    aiFillError = serializers.CharField(source='ai_fill_error', read_only=True)
+    aiFillTaskId = serializers.CharField(source='ai_fill_task_id', read_only=True)
+    aiFilledAt = serializers.DateTimeField(source='ai_filled_at', read_only=True, allow_null=True)
 
     class Meta:
         model = Syllabus
         fields = [
             'id', 'owner', 'status', 'completion', 'courseDescription', 'courseGoal', 'teachingPhilosophy',
             'titleInfo', 'classSchedule', 'learningOutcomes', 'thematicPlan', 'assessmentSystem', 'literature',
-            'coursePolicy', 'signatures', 'pdfFile', 'pdfStatus', 'pdfGeneratedAt', 'pdfError', 'pdfTaskId',
+            'coursePolicy', 'signatures', 'pdfFile', 'pdfFileRu', 'pdfFileKz', 'pdfFileEn',
+            'docxFileRu', 'docxFileKz', 'docxFileEn', 'pdfStatus', 'pdfGeneratedAt', 'pdfError', 'pdfTaskId',
+            'constructorSavedAt', 'renderedContent', 'renderedContentKz', 'renderedContentRu', 'renderedContentEn',
+            'renderTranslationStatus', 'renderTranslationError', 'renderTranslatedAt', 'renderTranslationTaskId',
+            'aiFillStatus', 'aiFillError', 'aiFillTaskId', 'aiFilledAt',
             'createdAt', 'updatedAt'
         ]
         read_only_fields = [
-            'id', 'owner', 'pdfFile', 'pdfStatus', 'pdfGeneratedAt', 'pdfError', 'pdfTaskId',
+            'id', 'owner', 'pdfFile', 'pdfFileRu', 'pdfFileKz', 'pdfFileEn',
+            'docxFileRu', 'docxFileKz', 'docxFileEn', 'pdfStatus', 'pdfGeneratedAt', 'pdfError', 'pdfTaskId',
+            'renderedContent', 'renderedContentKz', 'renderedContentRu', 'renderedContentEn',
+            'renderTranslationStatus', 'renderTranslationError', 'renderTranslatedAt', 'renderTranslationTaskId',
+            'aiFillStatus', 'aiFillError', 'aiFillTaskId', 'aiFilledAt',
             'createdAt', 'updatedAt'
         ]
 
@@ -142,16 +169,49 @@ class SyllabusSerializer(serializers.ModelSerializer):
         self._create_nested(instance, nested, replace=True)
 
         if content_changed:
-            old_file_name = instance.pdf_file.name if instance.pdf_file else ''
-            old_storage = instance.pdf_file.storage if instance.pdf_file else None
+            document_fields = [
+                'pdf_file', 'pdf_file_ru', 'pdf_file_kz', 'pdf_file_en',
+                'docx_file_ru', 'docx_file_kz', 'docx_file_en',
+            ]
+            old_files = [
+                (getattr(instance, field).storage, getattr(instance, field).name)
+                for field in document_fields
+                if getattr(instance, field)
+            ]
             instance.pdf_file = None
+            instance.pdf_file_ru = None
+            instance.pdf_file_kz = None
+            instance.pdf_file_en = None
+            instance.docx_file_ru = None
+            instance.docx_file_kz = None
+            instance.docx_file_en = None
             instance.pdf_status = Syllabus.PDF_STATUS_NOT_GENERATED
             instance.pdf_generated_at = None
             instance.pdf_error = ''
             instance.pdf_task_id = ''
-            instance.save(update_fields=['pdf_file', 'pdf_status', 'pdf_generated_at', 'pdf_error', 'pdf_task_id'])
-            if old_file_name and old_storage:
-                transaction.on_commit(lambda: old_storage.delete(old_file_name))
+            instance.rendered_content = ''
+            instance.rendered_content_kz = ''
+            instance.rendered_content_ru = ''
+            instance.rendered_content_en = ''
+            instance.render_translation_status = Syllabus.RENDER_TRANSLATION_NOT_TRANSLATED
+            instance.render_translation_error = ''
+            instance.render_translated_at = None
+            instance.render_translation_task_id = ''
+            instance.ai_fill_status = Syllabus.AI_FILL_NOT_STARTED
+            instance.ai_fill_error = ''
+            instance.ai_fill_task_id = ''
+            instance.ai_filled_at = None
+            instance.save(update_fields=[
+                'pdf_file', 'pdf_file_ru', 'pdf_file_kz', 'pdf_file_en',
+                'docx_file_ru', 'docx_file_kz', 'docx_file_en',
+                'pdf_status', 'pdf_generated_at', 'pdf_error', 'pdf_task_id',
+                'rendered_content', 'rendered_content_kz', 'rendered_content_ru', 'rendered_content_en',
+                'render_translation_status', 'render_translation_error', 'render_translated_at',
+                'render_translation_task_id', 'ai_fill_status', 'ai_fill_error', 'ai_fill_task_id',
+                'ai_filled_at',
+            ])
+            for old_storage, old_file_name in old_files:
+                transaction.on_commit(lambda storage=old_storage, name=old_file_name: storage.delete(name))
 
         return instance
 
@@ -201,5 +261,6 @@ class SyllabusSerializer(serializers.ModelSerializer):
                 getattr(syllabus, key).all().delete()
             for index, item in enumerate(nested[key], start=1):
                 payload = dict(item)
+                payload.pop('id', None)
                 payload.pop('order', None)
                 model_class.objects.create(syllabus=syllabus, order=item.get('order', index), **payload)

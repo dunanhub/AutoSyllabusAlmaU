@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
     'accounts',
     'syllabuses',
+    'template_builder',
 ]
 
 MIDDLEWARE = [
@@ -122,6 +123,7 @@ REST_FRAMEWORK = {
         'rest_framework.permissions.IsAuthenticated',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'URL_FORMAT_OVERRIDE': None,
 }
 
 SPECTACULAR_SETTINGS = {
@@ -163,3 +165,6 @@ CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_ALWAYS_EAGER = env('CELERY_TASK_ALWAYS_EAGER', '0') == '1'
 CELERY_TASK_EAGER_PROPAGATES = env('CELERY_TASK_EAGER_PROPAGATES', '0') == '1'
+
+GEMINI_API_KEY = env('GEMINI_API_KEY', '')
+GEMINI_MODEL = env('GEMINI_MODEL', 'gemini-2.5-flash')

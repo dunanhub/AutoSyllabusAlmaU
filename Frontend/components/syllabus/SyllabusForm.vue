@@ -35,6 +35,7 @@ function clone(value: Syllabus): Syllabus {
 }
 
 const form = reactive<Syllabus>(clone(props.modelValue))
+const templatesStore = useTemplatesStore()
 const currentStep = ref(0)
 const saveState = ref<'idle' | 'saving' | 'saved'>('idle')
 let timer: ReturnType<typeof setTimeout> | undefined
@@ -69,8 +70,22 @@ watch(form, () => {
   }, 700)
 }, { deep: true })
 
-onMounted(() => { ready = true })
+onMounted(async () => {
+  await templatesStore.initialize()
+  if (!form.titleInfo.templateId) {
+    const template = await templatesStore.getDefaultTemplate()
+    if (template) form.titleInfo.templateId = template.id
+  }
+  ready = true
+})
 onBeforeUnmount(() => clearTimeout(timer))
+
+const templateItems = computed(() => templatesStore.templates
+  .filter(template => template.validationStatus === 'valid')
+  .map(template => ({
+    title: template.isDefault ? `${template.title} · Default` : template.title,
+    value: template.id
+  })))
 
 const canPreview = computed(() => Boolean(form.titleInfo.codeAndName.trim() || form.titleInfo.instructorName.trim() || form.courseDescription.trim()))
 const completedSections = computed(() => new Set([
@@ -145,6 +160,17 @@ function previous() { if (currentStep.value > 0) currentStep.value-- }
         <div class="p-5 sm:p-7">
           <div v-if="currentStep === 0" class="space-y-5">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              <v-select
+                v-model="form.titleInfo.templateId"
+                :items="templateItems"
+                label="Шаблон силлабуса"
+                item-title="title"
+                item-value="value"
+                class="xl:col-span-3"
+                :loading="templatesStore.loading"
+                hint="Этот шаблон будет использоваться для предпросмотра на странице дисциплины."
+                persistent-hint
+              />
               <BaseInput v-model="form.titleInfo.codeAndName" label="Код и название дисциплины" required class="xl:col-span-2" placeholder="HIS 1101 — История Казахстана" />
               <BaseSelect v-model="form.status" label="Статус"><option value="draft">Черновик</option><option value="ready">Готов</option></BaseSelect>
               <BaseInput v-model="form.titleInfo.credits" type="number" label="Кредиты" />
@@ -154,7 +180,7 @@ function previous() { if (currentStep.value > 0) currentStep.value-- }
               <BaseInput v-model="form.titleInfo.levelOfTraining" label="Уровень обучения" />
               <BaseInput v-model="form.titleInfo.semester" label="Семестр" />
               <BaseInput v-model="form.titleInfo.educationalProgram" label="Образовательная программа" class="xl:col-span-2" />
-              <BaseSelect v-model="form.titleInfo.languageOfEducation" label="Язык обучения"><option value="KZ">KZ · Қазақша</option><option value="RU">RU · Русский</option><option value="EN">EN · English</option></BaseSelect>
+              <BaseSelect v-model="form.titleInfo.languageOfEducation" label="Язык обучения"><option value="MULTI">RU / KZ / EN</option><option value="KZ">KZ · Қазақша</option><option value="RU">RU · Русский</option><option value="EN">EN · English</option></BaseSelect>
               <BaseInput v-model="form.titleInfo.proficiencyLevel" label="Уровень владения языком" />
               <BaseInput v-model="form.titleInfo.formatOfTraining" label="Формат обучения" />
               <BaseInput v-model="form.titleInfo.timeAndPlace" label="Время и место проведения занятий" class="xl:col-span-2" />

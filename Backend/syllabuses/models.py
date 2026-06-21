@@ -21,6 +21,26 @@ class Syllabus(models.Model):
         (PDF_STATUS_GENERATED, 'Generated'),
         (PDF_STATUS_FAILED, 'Failed'),
     ]
+    RENDER_TRANSLATION_NOT_TRANSLATED = 'not_translated'
+    RENDER_TRANSLATION_TRANSLATING = 'translating'
+    RENDER_TRANSLATION_COMPLETED = 'completed'
+    RENDER_TRANSLATION_FAILED = 'failed'
+    RENDER_TRANSLATION_CHOICES = [
+        (RENDER_TRANSLATION_NOT_TRANSLATED, 'Not translated'),
+        (RENDER_TRANSLATION_TRANSLATING, 'Translating'),
+        (RENDER_TRANSLATION_COMPLETED, 'Completed'),
+        (RENDER_TRANSLATION_FAILED, 'Failed'),
+    ]
+    AI_FILL_NOT_STARTED = 'not_started'
+    AI_FILL_PROCESSING = 'processing'
+    AI_FILL_COMPLETED = 'completed'
+    AI_FILL_FAILED = 'failed'
+    AI_FILL_CHOICES = [
+        (AI_FILL_NOT_STARTED, 'Not started'),
+        (AI_FILL_PROCESSING, 'Processing'),
+        (AI_FILL_COMPLETED, 'Completed'),
+        (AI_FILL_FAILED, 'Failed'),
+    ]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='syllabuses')
@@ -30,6 +50,12 @@ class Syllabus(models.Model):
     courseGoal = models.TextField(blank=True, default='')
     teachingPhilosophy = models.TextField(blank=True, default='')
     pdf_file = models.FileField(upload_to='syllabuses/pdfs/', null=True, blank=True)
+    pdf_file_ru = models.FileField(upload_to='syllabuses/pdfs/', null=True, blank=True)
+    pdf_file_kz = models.FileField(upload_to='syllabuses/pdfs/', null=True, blank=True)
+    pdf_file_en = models.FileField(upload_to='syllabuses/pdfs/', null=True, blank=True)
+    docx_file_ru = models.FileField(upload_to='syllabuses/docx/', null=True, blank=True)
+    docx_file_kz = models.FileField(upload_to='syllabuses/docx/', null=True, blank=True)
+    docx_file_en = models.FileField(upload_to='syllabuses/docx/', null=True, blank=True)
     pdf_status = models.CharField(
         max_length=16,
         choices=PDF_STATUS_CHOICES,
@@ -38,6 +64,23 @@ class Syllabus(models.Model):
     pdf_generated_at = models.DateTimeField(null=True, blank=True)
     pdf_error = models.TextField(blank=True, default='')
     pdf_task_id = models.CharField(max_length=255, blank=True, default='')
+    constructor_saved_at = models.DateTimeField(null=True, blank=True)
+    rendered_content = models.TextField(blank=True, default='')
+    rendered_content_kz = models.TextField(blank=True, default='')
+    rendered_content_ru = models.TextField(blank=True, default='')
+    rendered_content_en = models.TextField(blank=True, default='')
+    render_translation_status = models.CharField(
+        max_length=24,
+        choices=RENDER_TRANSLATION_CHOICES,
+        default=RENDER_TRANSLATION_NOT_TRANSLATED,
+    )
+    render_translation_error = models.TextField(blank=True, default='')
+    render_translated_at = models.DateTimeField(null=True, blank=True)
+    render_translation_task_id = models.CharField(max_length=255, blank=True, default='')
+    ai_fill_status = models.CharField(max_length=24, choices=AI_FILL_CHOICES, default=AI_FILL_NOT_STARTED)
+    ai_fill_error = models.TextField(blank=True, default='')
+    ai_fill_task_id = models.CharField(max_length=255, blank=True, default='')
+    ai_filled_at = models.DateTimeField(null=True, blank=True)
     createdAt = models.DateTimeField(auto_now_add=True)
     updatedAt = models.DateTimeField(auto_now=True)
 
@@ -56,6 +99,10 @@ class SyllabusTitleInfo(models.Model):
     levelOfTraining = models.CharField(max_length=255, blank=True, default='')
     semester = models.CharField(max_length=255, blank=True, default='')
     educationalProgram = models.CharField(max_length=255, blank=True, default='')
+    schoolId = models.CharField(max_length=64, blank=True, default='')
+    schoolName = models.CharField(max_length=255, blank=True, default='')
+    courseType = models.CharField(max_length=64, blank=True, default='default')
+    templateId = models.CharField(max_length=64, blank=True, default='default-almau-syllabus')
     languageOfEducation = models.CharField(max_length=64, blank=True, default='')
     proficiencyLevel = models.CharField(max_length=255, blank=True, default='')
     formatOfTraining = models.CharField(max_length=255, blank=True, default='')
@@ -64,6 +111,7 @@ class SyllabusTitleInfo(models.Model):
     instructorEmail = models.EmailField(blank=True, default='')
     instructorContacts = models.TextField(blank=True, default='')
     timeAndPlace = models.TextField(blank=True, default='')
+    qrUrl = models.URLField(blank=True, default='')
 
 
 class ClassScheduleRow(models.Model):

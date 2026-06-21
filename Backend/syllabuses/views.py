@@ -3,6 +3,7 @@ import uuid
 
 from django.core.cache import cache
 from django.http import FileResponse
+from django.utils import timezone
 from drf_spectacular.types import OpenApiTypes
 from drf_spectacular.utils import OpenApiResponse, extend_schema
 from rest_framework import status, viewsets
@@ -14,7 +15,13 @@ from .models import Syllabus
 from .cache import CACHE_TIMEOUT, invalidate_syllabus_cache, syllabus_cache_key
 from .permissions import IsOwnerOrAdmin
 from .serializers import SyllabusSerializer
-from .tasks import generate_syllabus_pdf_task
+from .services.ai_fill_service import has_empty_ai_fill_blocks
+from .tasks import ai_fill_syllabus_task, generate_syllabus_pdf_task, translate_rendered_syllabus_task
+
+
+DOCUMENT_LANGUAGES = {'ru', 'kz', 'en'}
+DOCUMENT_FORMATS = {'pdf', 'docx'}
+DOCX_CONTENT_TYPE = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 
 
 class SyllabusViewSet(viewsets.ModelViewSet):
@@ -142,12 +149,144 @@ class SyllabusViewSet(viewsets.ModelViewSet):
         pdf_file = None
         if syllabus.pdf_file:
             pdf_file = request.build_absolute_uri(syllabus.pdf_file.url)
+        documents = {
+            language: {
+                document_format: self._document_file_exists(
+                    getattr(syllabus, f'{document_format}_file_{language}')
+                )
+                for document_format in DOCUMENT_FORMATS
+            }
+            for language in DOCUMENT_LANGUAGES
+        }
         return Response({
             'taskId': syllabus.pdf_task_id,
             'pdfStatus': syllabus.pdf_status,
             'pdfGeneratedAt': syllabus.pdf_generated_at,
             'pdfError': syllabus.pdf_error,
             'pdfFile': pdf_file,
+            'documents': documents,
+        })
+
+    @extend_schema(
+        request=None,
+        responses={202: OpenApiResponse(description='Rendered syllabus translation task accepted')},
+    )
+    @action(detail=True, methods=['post'], url_path='translate-rendered')
+    def translate_rendered(self, request, id=None):
+        syllabus = self.get_object()
+        if (
+            syllabus.render_translation_status == Syllabus.RENDER_TRANSLATION_TRANSLATING
+            and syllabus.render_translation_task_id
+        ):
+            return Response(
+                {'taskId': syllabus.render_translation_task_id, 'status': syllabus.render_translation_status},
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        task_id = str(uuid.uuid4())
+        syllabus.render_translation_status = Syllabus.RENDER_TRANSLATION_TRANSLATING
+        syllabus.render_translation_error = ''
+        syllabus.render_translated_at = None
+        syllabus.render_translation_task_id = task_id
+        syllabus.save(update_fields=[
+            'render_translation_status',
+            'render_translation_error',
+            'render_translated_at',
+            'render_translation_task_id',
+            'updatedAt',
+        ])
+        invalidate_syllabus_cache()
+        try:
+            translate_rendered_syllabus_task.apply_async(args=[str(syllabus.id)], task_id=task_id)
+        except Exception as error:
+            syllabus.render_translation_status = Syllabus.RENDER_TRANSLATION_FAILED
+            syllabus.render_translation_error = str(error)
+            syllabus.save(update_fields=['render_translation_status', 'render_translation_error', 'updatedAt'])
+            invalidate_syllabus_cache()
+        return Response({'taskId': task_id, 'status': syllabus.render_translation_status}, status=status.HTTP_202_ACCEPTED)
+
+    @extend_schema(responses={200: OpenApiResponse(description='Current rendered syllabus translation status')})
+    @action(detail=True, methods=['get'], url_path='render-translation-status')
+    def render_translation_status(self, request, id=None):
+        syllabus = self.get_object()
+        return Response({
+            'taskId': syllabus.render_translation_task_id,
+            'status': syllabus.render_translation_status,
+            'error': syllabus.render_translation_error,
+            'translatedAt': syllabus.render_translated_at,
+            'renderedContent': syllabus.rendered_content,
+            'renderedContentKz': syllabus.rendered_content_kz,
+            'renderedContentRu': syllabus.rendered_content_ru,
+            'renderedContentEn': syllabus.rendered_content_en,
+        })
+
+    @extend_schema(
+        request=None,
+        responses={202: OpenApiResponse(description='AI fill task accepted')},
+    )
+    @action(detail=True, methods=['post'], url_path='ai-fill')
+    def ai_fill(self, request, id=None):
+        syllabus = self.get_object()
+        if (
+            syllabus.ai_fill_status == Syllabus.AI_FILL_PROCESSING
+            and syllabus.ai_fill_task_id
+        ):
+            return Response(
+                {'taskId': syllabus.ai_fill_task_id, 'status': syllabus.ai_fill_status},
+                status=status.HTTP_202_ACCEPTED,
+            )
+
+        if not has_empty_ai_fill_blocks(syllabus):
+            syllabus.ai_fill_status = Syllabus.AI_FILL_COMPLETED
+            syllabus.ai_fill_error = ''
+            syllabus.ai_fill_task_id = ''
+            syllabus.ai_filled_at = syllabus.ai_filled_at or timezone.now()
+            syllabus.save(update_fields=[
+                'ai_fill_status',
+                'ai_fill_error',
+                'ai_fill_task_id',
+                'ai_filled_at',
+                'updatedAt',
+            ])
+            invalidate_syllabus_cache()
+            return Response(
+                {'taskId': '', 'status': syllabus.ai_fill_status},
+                status=status.HTTP_200_OK,
+            )
+
+        task_id = str(uuid.uuid4())
+        syllabus.ai_fill_status = Syllabus.AI_FILL_PROCESSING
+        syllabus.ai_fill_error = ''
+        syllabus.ai_fill_task_id = task_id
+        syllabus.ai_filled_at = None
+        syllabus.save(update_fields=[
+            'ai_fill_status',
+            'ai_fill_error',
+            'ai_fill_task_id',
+            'ai_filled_at',
+            'updatedAt',
+        ])
+        invalidate_syllabus_cache()
+        try:
+            ai_fill_syllabus_task.apply_async(args=[str(syllabus.id)], task_id=task_id)
+        except Exception as error:
+            syllabus.ai_fill_status = Syllabus.AI_FILL_FAILED
+            syllabus.ai_fill_error = str(error)
+            syllabus.ai_fill_task_id = ''
+            syllabus.save(update_fields=['ai_fill_status', 'ai_fill_error', 'ai_fill_task_id', 'updatedAt'])
+            invalidate_syllabus_cache()
+        return Response({'taskId': task_id, 'status': syllabus.ai_fill_status}, status=status.HTTP_202_ACCEPTED)
+
+    @extend_schema(responses={200: OpenApiResponse(description='Current AI fill status')})
+    @action(detail=True, methods=['get'], url_path='ai-fill-status')
+    def ai_fill_status(self, request, id=None):
+        syllabus = self.get_object()
+        return Response({
+            'taskId': syllabus.ai_fill_task_id,
+            'status': syllabus.ai_fill_status,
+            'error': syllabus.ai_fill_error,
+            'filledAt': syllabus.ai_filled_at,
+            'syllabus': SyllabusSerializer(syllabus, context={'request': request}).data,
         })
 
     @extend_schema(
@@ -158,14 +297,47 @@ class SyllabusViewSet(viewsets.ModelViewSet):
     )
     @action(detail=True, methods=['get'], url_path='download-pdf')
     def download_pdf(self, request, id=None):
+        language = request.query_params.get('language', 'ru').lower()
+        return self._download_document_response(request, id, language, 'pdf')
+
+    @extend_schema(
+        parameters=[],
+        responses={
+            (200, 'application/pdf'): OpenApiTypes.BINARY,
+            (200, DOCX_CONTENT_TYPE): OpenApiTypes.BINARY,
+            400: OpenApiResponse(description='Document is not generated yet'),
+        },
+    )
+    @action(detail=True, methods=['get'], url_path='download-document')
+    def download_document(self, request, id=None):
+        language = request.query_params.get('language', 'ru').lower()
+        document_format = request.query_params.get('format', 'pdf').lower()
+        return self._download_document_response(request, id, language, document_format)
+
+    def _download_document_response(self, request, id, language, document_format):
         syllabus = self.get_object()
+        if language not in DOCUMENT_LANGUAGES or document_format not in DOCUMENT_FORMATS:
+            return Response(
+                {'detail': 'Invalid language or document format'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        field_name = f'{document_format}_file_{language}'
+        document_file = getattr(syllabus, field_name)
+        if document_format == 'pdf' and language == 'ru' and not document_file:
+            document_file = syllabus.pdf_file
+
         if (
             syllabus.pdf_status != Syllabus.PDF_STATUS_GENERATED
-            or not syllabus.pdf_file
-            or not syllabus.pdf_file.storage.exists(syllabus.pdf_file.name)
+            or not document_file
+            or not document_file.storage.exists(document_file.name)
         ):
             return Response(
-                {'detail': 'PDF is not generated yet'},
+                {
+                    'detail': 'Document is not generated yet',
+                    'pdfStatus': syllabus.pdf_status,
+                    'missing': field_name,
+                },
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -173,10 +345,19 @@ class SyllabusViewSet(viewsets.ModelViewSet):
         if hasattr(syllabus, 'titleInfo'):
             course_code = syllabus.titleInfo.codeAndName.split('—', 1)[0].strip()
         safe_code = re.sub(r'[^\w.-]+', '_', course_code, flags=re.UNICODE).strip('._')
-        filename = f'syllabus_{safe_code or syllabus.id}.pdf'
+        filename = f'syllabus_{safe_code or syllabus.id}_{language}.{document_format}'
+        content_type = 'application/pdf' if document_format == 'pdf' else DOCX_CONTENT_TYPE
         return FileResponse(
-            syllabus.pdf_file.open('rb'),
+            document_file.open('rb'),
             as_attachment=True,
             filename=filename,
-            content_type='application/pdf',
+            content_type=content_type,
+        )
+
+    @staticmethod
+    def _document_file_exists(document_file):
+        return bool(
+            document_file
+            and document_file.name
+            and document_file.storage.exists(document_file.name)
         )

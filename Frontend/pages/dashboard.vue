@@ -48,12 +48,12 @@ onMounted(async () => {
     <section class="hero-panel relative overflow-hidden rounded-2xl border border-white/10 p-6 text-white sm:p-8">
       <div class="relative z-10 grid gap-8 lg:grid-cols-[1fr_auto] lg:items-end">
         <div>
-          <v-chip color="primary" variant="tonal" size="small" class="mb-4 font-weight-bold">DEMO WORKSPACE</v-chip>
+          <!-- <v-chip color="primary" variant="tonal" size="small" class="mb-4 font-weight-bold">DEMO WORKSPACE</v-chip> -->
           <h1 class="text-3xl font-black tracking-[-0.04em] sm:text-4xl">Добро пожаловать, {{ firstName }}</h1>
-          <p class="mt-3 max-w-2xl text-sm leading-6 text-white/55">Контролируйте готовность документов, продолжайте редактирование и создавайте новые силлабусы в единой академической системе.</p>
+          <p class="mt-3 max-w-2xl text-sm leading-6 text-white/55">Контролируйте готовность дисциплин, продолжайте редактирование и создавайте силлабусы в единой академической системе.</p>
         </div>
-        <v-btn color="primary" size="large" :prepend-icon="mdiPlus" class="text-none font-weight-bold" @click="navigateTo('/syllabuses/create')">
-          Создать силлабус
+        <v-btn color="primary" size="large" :prepend-icon="mdiPlus" class="text-none font-weight-bold" @click="navigateTo('/syllabuses?create=1')">
+          Создать дисциплину
         </v-btn>
       </div>
     </section>

@@ -7,6 +7,10 @@ function display(value: string | number | undefined) {
   return value === '' || value === undefined ? '—' : value
 }
 
+function displayLanguage(value: string | undefined) {
+  return value === 'MULTI' ? 'RU / KZ / EN' : display(value)
+}
+
 function isAssessmentSummaryRow(topicModule: string) {
   const value = topicModule.toLowerCase()
   return value.includes('всего за теоретическое обучение') || value.includes('государственный экзамен') || value.includes('всего за курс')
@@ -41,7 +45,7 @@ const stateExamTotal = computed(() => {
       <div class="mt-7 text-center">
         <p class="text-[9px] font-bold uppercase tracking-[0.22em] text-slate-500">Силлабус дисциплины</p>
         <h1 class="mt-3 text-xl font-bold uppercase leading-tight">{{ syllabus.titleInfo.codeAndName || 'Без названия' }}</h1>
-        <p class="mt-3 text-[10px] font-semibold text-slate-600">{{ syllabus.titleInfo.educationalProgram }} · {{ syllabus.titleInfo.semester }} · {{ syllabus.titleInfo.languageOfEducation }}</p>
+        <p class="mt-3 text-[10px] font-semibold text-slate-600">{{ syllabus.titleInfo.educationalProgram }} · {{ syllabus.titleInfo.semester }} · {{ displayLanguage(syllabus.titleInfo.languageOfEducation) }}</p>
       </div>
     </header>
 
@@ -54,7 +58,7 @@ const stateExamTotal = computed(() => {
         <tr><th>Пререквизиты</th><td colspan="3">{{ display(syllabus.titleInfo.prerequisites) }}</td></tr>
         <tr><th>Уровень обучения</th><td>{{ display(syllabus.titleInfo.levelOfTraining) }}</td><th>Семестр</th><td>{{ display(syllabus.titleInfo.semester) }}</td></tr>
         <tr><th>Образовательная программа</th><td colspan="3">{{ display(syllabus.titleInfo.educationalProgram) }}</td></tr>
-        <tr><th>Язык обучения</th><td>{{ syllabus.titleInfo.languageOfEducation }}</td><th>Уровень владения языком</th><td>{{ display(syllabus.titleInfo.proficiencyLevel) }}</td></tr>
+        <tr><th>Язык обучения</th><td>{{ displayLanguage(syllabus.titleInfo.languageOfEducation) }}</td><th>Уровень владения языком</th><td>{{ display(syllabus.titleInfo.proficiencyLevel) }}</td></tr>
         <tr><th>Формат обучения</th><td>{{ display(syllabus.titleInfo.formatOfTraining) }}</td><th>Время и место</th><td>{{ display(syllabus.titleInfo.timeAndPlace) }}</td></tr>
         <tr><th>Преподаватель</th><td>{{ display(syllabus.titleInfo.instructorName) }}</td><th>Ученая степень / должность</th><td>{{ display(syllabus.titleInfo.instructorDegree) }}</td></tr>
         <tr><th>Email</th><td>{{ display(syllabus.titleInfo.instructorEmail) }}</td><th>Контакты</th><td>{{ display(syllabus.titleInfo.instructorContacts) }}</td></tr>

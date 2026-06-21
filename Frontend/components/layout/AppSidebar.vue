@@ -13,6 +13,7 @@ const model = defineModel<boolean>({ default: false })
 const route = useRoute()
 const auth = useAuthStore()
 const { lgAndUp } = useDisplay()
+const isMounted = ref(false)
 
 const navigation = [
   { label: 'Обзор', to: '/dashboard', icon: mdiViewDashboardOutline },
@@ -26,10 +27,17 @@ function isActive(to: string) {
   return to === '/dashboard' ? route.path === to : route.path.startsWith(to)
 }
 
+const profileEmail = computed(() => (isMounted.value ? auth.user?.email || '' : ''))
+const profileInitials = computed(() => profileEmail.value.slice(0, 2).toUpperCase() || 'SG')
+
 async function logout() {
   auth.logout()
   await navigateTo('/login')
 }
+
+onMounted(() => {
+  isMounted.value = true
+})
 </script>
 
 <template>
@@ -50,7 +58,7 @@ async function logout() {
       </NuxtLink>
 
       <div class="px-5 pb-2 pt-6 text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/30">
-        Demo workspace
+        Workspace
       </div>
       <v-list class="flex-1 bg-transparent px-3" nav density="comfortable">
         <v-list-item
@@ -69,10 +77,10 @@ async function logout() {
       <div class="border-t border-white/10 p-3">
         <div class="mb-2 flex items-center gap-3 rounded-xl bg-white/5 p-3">
           <v-avatar color="primary" size="34" class="font-weight-bold text-[#032d23]">
-            {{ auth.user?.email.slice(0, 2).toUpperCase() || 'SG' }}
+            {{ profileInitials }}
           </v-avatar>
           <div class="min-w-0">
-            <p class="truncate text-xs font-bold text-white">{{ auth.user?.email }}</p>
+            <p class="truncate text-xs font-bold text-white">{{ profileEmail || 'Syllabus Generator' }}</p>
             <p class="mt-0.5 text-[10px] text-white/35">Преподаватель AlmaU</p>
           </div>
         </div>
