@@ -16,6 +16,11 @@ export interface RegisterPayload {
   passwordConfirm: string
 }
 
+export interface UpdateProfilePayload {
+  firstName: string
+  lastName: string
+}
+
 export interface CurrentUserResponse {
   id: number | string
   email: string
@@ -49,6 +54,13 @@ export function useAuthApi() {
     },
     me() {
       return request<CurrentUserResponse>('/auth/me/')
+    },
+    updateMe(payload: UpdateProfilePayload) {
+      return request<CurrentUserResponse, UpdateProfilePayload>('/auth/me/', {
+        method: 'PATCH',
+        body: payload,
+        showErrorToast: false
+      })
     }
   }
 }

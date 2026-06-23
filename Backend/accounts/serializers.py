@@ -10,6 +10,16 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['id', 'email', 'first_name', 'last_name', 'is_staff']
 
 
+class UserProfileUpdateSerializer(serializers.ModelSerializer):
+    firstName = serializers.CharField(source='first_name', max_length=150, required=False, allow_blank=True)
+    lastName = serializers.CharField(source='last_name', max_length=150, required=False, allow_blank=True)
+
+    class Meta:
+        model = User
+        fields = ['id', 'email', 'firstName', 'lastName', 'is_staff']
+        read_only_fields = ['id', 'email', 'is_staff']
+
+
 class RegisterSerializer(serializers.Serializer):
     firstName = serializers.CharField(source='first_name', max_length=150)
     lastName = serializers.CharField(source='last_name', max_length=150)

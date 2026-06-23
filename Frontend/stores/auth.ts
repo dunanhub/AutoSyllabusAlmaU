@@ -72,6 +72,12 @@ export const useAuthStore = defineStore('auth', () => {
     return user.value
   }
 
+  async function updateProfile(payload: { firstName: string, lastName: string }) {
+    const authApi = useAuthApi()
+    user.value = await authApi.updateMe(payload)
+    return user.value
+  }
+
   async function refreshAccessToken() {
     if (!refreshToken.value) return false
     try {
@@ -104,5 +110,5 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, accessToken, refreshToken, initialized, isAuthenticated, initialize, login, register, logout, fetchCurrentUser, refreshAccessToken }
+  return { user, accessToken, refreshToken, initialized, isAuthenticated, initialize, login, register, logout, fetchCurrentUser, updateProfile, refreshAccessToken }
 })

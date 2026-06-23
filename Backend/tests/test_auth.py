@@ -48,6 +48,44 @@ def test_me_returns_authenticated_user(api_client, user):
     assert response.data['email'] == user.email
 
 
+def test_me_patch_updates_profile_names(api_client, user):
+    response = api_client.patch('/api/auth/me/', {
+        'firstName': 'Updated',
+        'lastName': 'Teacher',
+    }, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.data['first_name'] == 'Updated'
+    assert response.data['last_name'] == 'Teacher'
+
+    user.refresh_from_db()
+    assert user.first_name == 'Updated'
+    assert user.last_name == 'Teacher'
+
+
+def test_me_patch_requires_authentication():
+    response = APIClient().patch('/api/auth/me/', {
+        'firstName': 'No',
+        'lastName': 'Auth',
+    }, format='json')
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+
+def test_me_patch_does_not_update_read_only_fields(api_client, user):
+    response = api_client.patch('/api/auth/me/', {
+        'firstName': 'Safe',
+        'email': 'changed@example.com',
+        'is_staff': True,
+    }, format='json')
+
+    assert response.status_code == status.HTTP_200_OK
+    user.refresh_from_db()
+    assert user.first_name == 'Safe'
+    assert user.email != 'changed@example.com'
+    assert user.is_staff is False
+
+
 def test_syllabus_list_requires_authentication():
     response = APIClient().get('/api/syllabuses/')
 

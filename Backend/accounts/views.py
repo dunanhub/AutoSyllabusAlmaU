@@ -7,7 +7,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import RegisterResponseSerializer, RegisterSerializer, UserSerializer
+from .serializers import RegisterResponseSerializer, RegisterSerializer, UserProfileUpdateSerializer, UserSerializer
 
 
 class RegisterView(APIView):
@@ -37,5 +37,20 @@ class RegisterView(APIView):
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
 
+    @extend_schema(
+        responses={200: UserSerializer},
+        description='Return the currently authenticated user.',
+    )
     def get(self, request):
         return Response(UserSerializer(request.user).data)
+
+    @extend_schema(
+        request=UserProfileUpdateSerializer,
+        responses={200: UserSerializer},
+        description='Update editable profile fields for the currently authenticated user.',
+    )
+    def patch(self, request):
+        serializer = UserProfileUpdateSerializer(request.user, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return Response(UserSerializer(user).data)
