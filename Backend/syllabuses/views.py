@@ -11,6 +11,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from analytics.models import CeleryTaskLog
+from analytics.services import create_task_log, mark_task_failed, syllabus_title
+
 from .models import Syllabus
 from .cache import CACHE_TIMEOUT, invalidate_syllabus_cache, syllabus_cache_key
 from .permissions import IsOwnerOrAdmin
@@ -119,6 +122,15 @@ class SyllabusViewSet(viewsets.ModelViewSet):
         syllabus.pdf_error = ''
         syllabus.pdf_task_id = task_id
         syllabus.save(update_fields=['pdf_status', 'pdf_generated_at', 'pdf_error', 'pdf_task_id'])
+        create_task_log(
+            owner=syllabus.owner,
+            task_id=task_id,
+            task_type=CeleryTaskLog.TYPE_DOCUMENT_GENERATION,
+            object_type=CeleryTaskLog.OBJECT_SYLLABUS,
+            object_id=syllabus.id,
+            object_title=syllabus_title(syllabus),
+            retry_action=CeleryTaskLog.ACTION_SYLLABUS_DOCUMENTS,
+        )
         invalidate_syllabus_cache()
         try:
             generate_syllabus_pdf_task.apply_async(args=[str(syllabus.id)], task_id=task_id)
@@ -126,6 +138,7 @@ class SyllabusViewSet(viewsets.ModelViewSet):
             syllabus.pdf_status = Syllabus.PDF_STATUS_FAILED
             syllabus.pdf_error = str(error)
             syllabus.save(update_fields=['pdf_status', 'pdf_error'])
+            mark_task_failed(task_id, error)
             invalidate_syllabus_cache()
             return Response(
                 {
@@ -195,6 +208,15 @@ class SyllabusViewSet(viewsets.ModelViewSet):
             'render_translation_task_id',
             'updatedAt',
         ])
+        create_task_log(
+            owner=syllabus.owner,
+            task_id=task_id,
+            task_type=CeleryTaskLog.TYPE_RENDER_TRANSLATION,
+            object_type=CeleryTaskLog.OBJECT_SYLLABUS,
+            object_id=syllabus.id,
+            object_title=syllabus_title(syllabus),
+            retry_action=CeleryTaskLog.ACTION_SYLLABUS_RENDER_TRANSLATE,
+        )
         invalidate_syllabus_cache()
         try:
             translate_rendered_syllabus_task.apply_async(args=[str(syllabus.id)], task_id=task_id)
@@ -202,6 +224,7 @@ class SyllabusViewSet(viewsets.ModelViewSet):
             syllabus.render_translation_status = Syllabus.RENDER_TRANSLATION_FAILED
             syllabus.render_translation_error = str(error)
             syllabus.save(update_fields=['render_translation_status', 'render_translation_error', 'updatedAt'])
+            mark_task_failed(task_id, error)
             invalidate_syllabus_cache()
         return Response({'taskId': task_id, 'status': syllabus.render_translation_status}, status=status.HTTP_202_ACCEPTED)
 
@@ -266,6 +289,15 @@ class SyllabusViewSet(viewsets.ModelViewSet):
             'ai_filled_at',
             'updatedAt',
         ])
+        create_task_log(
+            owner=syllabus.owner,
+            task_id=task_id,
+            task_type=CeleryTaskLog.TYPE_SYLLABUS_AI_FILL,
+            object_type=CeleryTaskLog.OBJECT_SYLLABUS,
+            object_id=syllabus.id,
+            object_title=syllabus_title(syllabus),
+            retry_action=CeleryTaskLog.ACTION_SYLLABUS_AI_FILL,
+        )
         invalidate_syllabus_cache()
         try:
             ai_fill_syllabus_task.apply_async(args=[str(syllabus.id)], task_id=task_id)
@@ -274,6 +306,7 @@ class SyllabusViewSet(viewsets.ModelViewSet):
             syllabus.ai_fill_error = str(error)
             syllabus.ai_fill_task_id = ''
             syllabus.save(update_fields=['ai_fill_status', 'ai_fill_error', 'ai_fill_task_id', 'updatedAt'])
+            mark_task_failed(task_id, error)
             invalidate_syllabus_cache()
         return Response({'taskId': task_id, 'status': syllabus.ai_fill_status}, status=status.HTTP_202_ACCEPTED)
 

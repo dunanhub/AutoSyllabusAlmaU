@@ -5,6 +5,7 @@ import {
   mdiContentSaveOutline,
   mdiFileDocumentPlusOutline,
   mdiPlus,
+  mdiRefresh,
   mdiTranslate,
   mdiEyeOutline
 } from '@mdi/js'
@@ -54,6 +55,7 @@ const validationErrors = ref<string[]>([])
 const previewDialog = ref(false)
 const previewTemplate = ref<TemplateRecord | null>(null)
 const previewLoading = ref(false)
+const retryingTranslationId = ref('')
 const editingTemplate = computed(() => templates.templates.find(item => item.id === editTemplateId.value) || null)
 let pollingTimer: ReturnType<typeof setInterval> | null = null
 
@@ -199,6 +201,23 @@ function translationStatusColor(status: TemplateRecord['translationStatus']) {
     completed: 'success',
     failed: 'error'
   }[status]
+}
+
+async function retryTranslation(template: TemplateRecord) {
+  retryingTranslationId.value = template.id
+  try {
+    const response = await templates.translateTemplate(template.id)
+    if (response?.status === 'translating') {
+      show('Повторный перевод запущен', 'success')
+      startTranslationPolling()
+      return
+    }
+    show('Перевод уже обрабатывается', 'info')
+  } catch (error) {
+    show(error instanceof Error ? error.message : 'Не удалось повторить перевод', 'error')
+  } finally {
+    retryingTranslationId.value = ''
+  }
 }
 
 async function openPreview(template: TemplateRecord) {
@@ -396,6 +415,15 @@ function stopTranslationPolling() {
         </div>
         <h3>{{ template.title || 'Без названия' }}</h3>
         <p>{{ template.description || 'Описание не заполнено' }}</p>
+        <v-alert
+          v-if="template.translationStatus === 'failed'"
+          type="error"
+          variant="tonal"
+          density="compact"
+          class="mt-3 template-card__error"
+        >
+          {{ template.translationError || 'Перевод не выполнен. Можно повторить попытку.' }}
+        </v-alert>
         <div class="template-card__actions">
           <v-btn
             variant="tonal"
@@ -412,6 +440,18 @@ function stopTranslationPolling() {
             @click="openPreview(template)"
           >
             Просмотр
+          </v-btn>
+          <v-btn
+            v-if="template.translationStatus === 'failed'"
+            color="primary"
+            variant="tonal"
+            class="text-none"
+            :prepend-icon="mdiRefresh"
+            :loading="retryingTranslationId === template.id"
+            :disabled="template.validationStatus !== 'valid'"
+            @click="retryTranslation(template)"
+          >
+            Повторить перевод
           </v-btn>
           <v-tooltip
             :disabled="template.validationStatus === 'valid'"

@@ -1,5 +1,6 @@
 ﻿import base64
 import re
+import uuid
 from io import BytesIO
 from html import escape
 
@@ -39,9 +40,14 @@ def get_selected_template(syllabus: Syllabus) -> SyllabusTemplate:
     template_id = getattr(getattr(syllabus, 'titleInfo', None), 'templateId', '') or ''
     queryset = SyllabusTemplate.objects.filter(owner=syllabus.owner, validation_status=SyllabusTemplate.VALIDATION_VALID)
     if template_id:
-        template = queryset.filter(id=template_id).first()
-        if template:
-            return template
+        try:
+            template_uuid = uuid.UUID(str(template_id))
+        except (TypeError, ValueError):
+            template_uuid = None
+        if template_uuid:
+            template = queryset.filter(id=template_uuid).first()
+            if template:
+                return template
     template = queryset.filter(is_default=True).first() or queryset.first()
     if not template:
         raise ValueError('No valid syllabus template is available for rendered preview translation.')

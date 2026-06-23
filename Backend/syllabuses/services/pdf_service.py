@@ -103,7 +103,10 @@ def generate_syllabus_pdf(syllabus) -> Syllabus:
     syllabus = _load_syllabus(syllabus.id)
     old_files = _document_file_names(syllabus)
     try:
-        template = get_selected_template(syllabus)
+        try:
+            template = get_selected_template(syllabus)
+        except ValueError:
+            template = None
         rendered_documents = {
             language: _render_document_body(syllabus, template, language)
             for language in LANGUAGES
@@ -163,6 +166,12 @@ def _document_file_names(syllabus):
 
 
 def _render_document_body(syllabus, template, language):
+    if template is None:
+        return (
+            getattr(syllabus, f'rendered_content_{language}', '')
+            or syllabus.rendered_content
+            or '<p>Не заполнено</p>'
+        )
     original_content = template.content
     try:
         template.content = getattr(template, f'content_{language}', '') or template.content or ''

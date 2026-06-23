@@ -8,6 +8,9 @@ from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
+from analytics.models import CeleryTaskLog
+from analytics.services import create_task_log, mark_task_failed
+
 from .models import SyllabusTemplate
 from .serializers import (
     SyllabusTemplateSerializer,
@@ -55,12 +58,22 @@ class SyllabusTemplateViewSet(viewsets.ModelViewSet):
             template.translation_task_id = str(uuid.uuid4())
             update_fields += ['translation_status', 'translation_error', 'translated_at', 'translation_task_id']
             template.save(update_fields=update_fields)
+            create_task_log(
+                owner=template.owner,
+                task_id=template.translation_task_id,
+                task_type=CeleryTaskLog.TYPE_TEMPLATE_TRANSLATION,
+                object_type=CeleryTaskLog.OBJECT_TEMPLATE,
+                object_id=template.id,
+                object_title=template.title,
+                retry_action=CeleryTaskLog.ACTION_TEMPLATE_TRANSLATE,
+            )
             try:
                 translate_template_task.apply_async(args=[str(template.id)], task_id=template.translation_task_id)
             except Exception as error:
                 template.translation_status = SyllabusTemplate.TRANSLATION_FAILED
                 template.translation_error = str(error)
                 template.save(update_fields=['translation_status', 'translation_error', 'updated_at'])
+                mark_task_failed(template.translation_task_id, error)
             return
 
         if template.validation_status != SyllabusTemplate.VALIDATION_VALID:
@@ -103,12 +116,22 @@ class SyllabusTemplateViewSet(viewsets.ModelViewSet):
         template.translated_at = None
         template.translation_task_id = str(uuid.uuid4())
         template.save(update_fields=['translation_status', 'translation_error', 'translated_at', 'translation_task_id', 'updated_at'])
+        create_task_log(
+            owner=template.owner,
+            task_id=template.translation_task_id,
+            task_type=CeleryTaskLog.TYPE_TEMPLATE_TRANSLATION,
+            object_type=CeleryTaskLog.OBJECT_TEMPLATE,
+            object_id=template.id,
+            object_title=template.title,
+            retry_action=CeleryTaskLog.ACTION_TEMPLATE_TRANSLATE,
+        )
         try:
             translate_template_task.apply_async(args=[str(template.id)], task_id=template.translation_task_id)
         except Exception as error:
             template.translation_status = SyllabusTemplate.TRANSLATION_FAILED
             template.translation_error = str(error)
             template.save(update_fields=['translation_status', 'translation_error', 'updated_at'])
+            mark_task_failed(template.translation_task_id, error)
             return Response(
                 {'taskId': template.translation_task_id, 'status': template.translation_status},
                 status=status.HTTP_202_ACCEPTED,

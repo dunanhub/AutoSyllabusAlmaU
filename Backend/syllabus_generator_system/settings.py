@@ -30,6 +30,7 @@ INSTALLED_APPS = [
     'accounts',
     'syllabuses',
     'template_builder',
+    'analytics',
 ]
 
 MIDDLEWARE = [
